@@ -28,14 +28,10 @@ export async function searchSubreddit(
   const time = options?.timeframe || "month";
 
   try {
+    // Using getTop instead of search for more reliable results
     const posts = await reddit
       .getSubreddit(subreddit)
-      .search({
-        query: keyword,
-        time,
-        limit,
-        sort: "top",
-      });
+      .getTop({ time, limit: limit as any });
 
     return posts.map((post: any) => ({
       id: post.id,
