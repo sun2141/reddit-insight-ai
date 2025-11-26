@@ -65,7 +65,6 @@ export async function getPostComments(
   try {
     // @ts-expect-error - snoowrap has circular type references
     const submission = await reddit.getSubmission(postId);
-    // @ts-expect-error - snoowrap type issue
     const comments = await submission.comments.fetchAll({ amount: options?.limit || 100 });
 
     const flattenComments = (commentList: any[]): RedditComment[] => {
