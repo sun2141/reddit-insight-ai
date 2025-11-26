@@ -63,8 +63,8 @@ export async function getPostComments(
   const minScore = options?.minScore || 1;
 
   try {
-    const submission = await reddit.getSubmission(postId);
-    const comments = await submission.comments.fetchAll({ amount: options?.limit || 100 });
+    const submission = await reddit.getSubmission(postId) as any;
+    const comments = await submission.comments.fetchAll({ amount: options?.limit || 100 }) as any[];
 
     const flattenComments = (commentList: any[]): RedditComment[] => {
       const result: RedditComment[] = [];
