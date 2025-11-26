@@ -1,4 +1,7 @@
 import { inngest } from "./client";
+import { collectRedditData } from "@/services/reddit";
+import { analyzeComments, generateInsights } from "@/services/ai";
+import { updateProjectStatus, saveAnalysisResult } from "@/services/db";
 
 export const analyzeRedditWorkflow = inngest.createFunction(
   {
@@ -9,61 +12,73 @@ export const analyzeRedditWorkflow = inngest.createFunction(
   async ({ event, step }) => {
     const { projectId, keyword, subreddit } = event.data;
 
-    // Step 1: Fetch Reddit data
-    const redditData = await step.run("fetch-reddit-data", async () => {
-      // TODO: Implement Reddit data fetching
-      console.log(`Fetching Reddit data for: ${keyword} in r/${subreddit}`);
+    try {
+      // Update status to processing
+      await updateProjectStatus(projectId, "processing");
 
-      return {
-        posts: [],
-        comments: [],
-        totalPosts: 0,
-        totalComments: 0,
-      };
-    });
+      // Step 1: Fetch Reddit data
+      const redditData = await step.run("fetch-reddit-data", async () => {
+        console.log(`Fetching Reddit data for: ${keyword} in r/${subreddit}`);
+        return await collectRedditData(subreddit, keyword);
+      });
 
-    // Step 2: Analyze comments with Gemini
-    const summaries = await step.run("analyze-comments", async () => {
-      // TODO: Implement Gemini batch analysis
-      console.log(`Analyzing ${redditData.totalComments} comments`);
+      // Step 2: Analyze comments with Gemini
+      const summaries = await step.run("analyze-comments", async () => {
+        console.log(`Analyzing ${redditData.totalComments} comments`);
+        if (redditData.comments.length === 0) {
+          return [];
+        }
+        return await analyzeComments(redditData.comments);
+      });
 
-      return [];
-    });
+      // Step 3: Generate insights with GPT-4o
+      const insights = await step.run("generate-insights", async () => {
+        console.log("Generating insights from summaries");
+        if (summaries.length === 0) {
+          throw new Error("No summaries available for insight generation");
+        }
+        return await generateInsights(keyword, subreddit, summaries);
+      });
 
-    // Step 3: Generate insights with GPT-4o
-    const insights = await step.run("generate-insights", async () => {
-      // TODO: Implement GPT-4o insight generation
-      console.log("Generating insights from summaries");
+      // Step 4: Save results to database
+      const result = await step.run("save-results", async () => {
+        console.log(`Saving results for project ${projectId}`);
 
-      return {
-        title: "",
-        overview: "",
-        key_insights: [],
-        blog_outline: [],
-        markdown_content: "",
-      };
-    });
+        const analysisResult = await saveAnalysisResult(
+          projectId,
+          { posts: redditData.posts, comments: redditData.comments },
+          summaries,
+          insights,
+          insights.markdown_content
+        );
 
-    // Step 4: Save results to database
-    const result = await step.run("save-results", async () => {
-      // TODO: Implement Supabase save
-      console.log(`Saving results for project ${projectId}`);
+        // Update project status to completed
+        await updateProjectStatus(projectId, "completed");
 
-      return {
-        id: projectId,
-        status: "completed",
-      };
-    });
+        return analysisResult;
+      });
 
-    // Send completion event
-    await step.sendEvent("analysis-completed", {
-      name: "reddit/analysis.completed",
-      data: {
+      // Send completion event
+      await step.sendEvent("analysis-completed", {
+        name: "reddit/analysis.completed",
+        data: {
+          projectId,
+          resultId: result.id,
+        },
+      });
+
+      return result;
+    } catch (error) {
+      console.error("Workflow error:", error);
+
+      // Update project status to failed
+      await updateProjectStatus(
         projectId,
-        resultId: result.id,
-      },
-    });
+        "failed",
+        error instanceof Error ? error.message : "Unknown error"
+      );
 
-    return result;
+      throw error;
+    }
   }
 );
