@@ -18,9 +18,11 @@ export default async function ProjectPage({
   return (
     <main className="min-h-screen p-8 max-w-7xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">{project.keyword}</h1>
+        <h1 className="text-3xl font-bold mb-2">
+          {project.feed_type?.toUpperCase()} Stories Analysis
+        </h1>
         <p className="text-gray-600 dark:text-gray-400">
-          Analysis for r/{project.subreddit}
+          {project.story_count} stories · Min score: {project.min_score || 0} · Min comments: {project.min_comments || 0}
         </p>
       </div>
 

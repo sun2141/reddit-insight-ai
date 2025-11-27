@@ -1,21 +1,25 @@
-// Reddit Types
-export interface RedditPost {
-  id: string;
-  title: string;
-  author: string;
-  url: string;
-  score: number;
-  num_comments: number;
-  created_utc: number;
-  selftext: string;
+// Hacker News Types
+export interface HNItem {
+  id: number;
+  type?: 'story' | 'comment' | 'job' | 'poll' | 'pollopt';
+  by?: string;
+  time?: number;
+  text?: string;
+  title?: string;
+  url?: string;
+  score?: number;
+  descendants?: number;
+  kids?: number[];
+  parent?: number;
+  deleted?: boolean;
+  dead?: boolean;
 }
 
-export interface RedditComment {
-  id: string;
-  author: string;
-  body: string;
-  score: number;
-  created_utc: number;
+export interface HNComment {
+  id: number;
+  by?: string;
+  text?: string;
+  time?: number;
 }
 
 // Analysis Types
@@ -39,8 +43,11 @@ export type ProjectStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
 export interface Project {
   id: string;
-  keyword: string;
-  subreddit: string;
+  source?: string;
+  feed_type?: string;
+  story_count?: number;
+  min_score?: number;
+  min_comments?: number;
   status: ProjectStatus;
   error_message?: string;
   created_at: string;

@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import OpenAI from "openai";
-import { RedditComment, AnalysisSummary, InsightReport } from "@/types";
+import { HNItem, AnalysisSummary, InsightReport } from "@/types";
 
 // Initialize AI clients
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
@@ -12,15 +12,15 @@ const openai = new OpenAI({
  * Summarize a batch of comments using Gemini Flash
  */
 export async function summarizeBatch(
-  comments: RedditComment[]
+  comments: HNItem[]
 ): Promise<AnalysisSummary> {
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
   const commentsText = comments
-    .map((c, i) => `${i + 1}. [Score: ${c.score}] ${c.body}`)
+    .map((c, i) => `${i + 1}. [by: ${c.by}] ${c.text || ''}`)
     .join("\n\n");
 
-  const prompt = `다음은 Reddit 댓글 모음입니다. 이 댓글들을 분석하여 다음 항목을 추출해주세요:
+  const prompt = `다음은 Hacker News 댓글 모음입니다. 이 댓글들을 분석하여 다음 항목을 추출해주세요:
 
 댓글들:
 ${commentsText}
@@ -52,7 +52,7 @@ ${commentsText}
  * Process all comments in batches
  */
 export async function analyzeComments(
-  comments: RedditComment[],
+  comments: HNItem[],
   batchSize: number = 50
 ): Promise<AnalysisSummary[]> {
   const summaries: AnalysisSummary[] = [];
@@ -82,8 +82,7 @@ export async function analyzeComments(
  * Generate final insights and blog draft using GPT-4o
  */
 export async function generateInsights(
-  keyword: string,
-  subreddit: string,
+  feedType: string,
   summaries: AnalysisSummary[]
 ): Promise<InsightReport> {
   const summariesText = summaries
@@ -98,8 +97,8 @@ export async function generateInsights(
     })
     .join("\n");
 
-  const prompt = `당신은 Reddit 데이터 분석 전문가입니다.
-다음은 r/${subreddit}에서 "${keyword}" 키워드로 수집한 댓글들의 요약입니다.
+  const prompt = `당신은 Hacker News 데이터 분석 전문가입니다.
+다음은 Hacker News ${feedType} stories에서 수집한 댓글들의 요약입니다.
 
 ${summariesText}
 
@@ -127,7 +126,7 @@ ${summariesText}
         {
           role: "system",
           content:
-            "You are a data analyst and content writer specializing in Reddit insights. Provide detailed, data-driven analysis in Korean.",
+            "You are a data analyst and content writer specializing in Hacker News insights. Provide detailed, data-driven analysis in Korean.",
         },
         {
           role: "user",

@@ -1,34 +1,39 @@
 import { inngest } from "./client";
-import { collectRedditData } from "@/services/reddit";
+import { collectHackerNewsData } from "@/services/hackerNews";
 import { analyzeComments, generateInsights } from "@/services/ai";
 import { updateProjectStatus, saveAnalysisResult } from "@/services/db";
 
-export const analyzeRedditWorkflow = inngest.createFunction(
+export const analyzeHackerNewsWorkflow = inngest.createFunction(
   {
-    id: "analyze-reddit",
-    name: "Analyze Reddit Subreddit",
+    id: "analyze-hackernews",
+    name: "Analyze Hacker News Stories",
   },
-  { event: "reddit/analyze.requested" },
+  { event: "hackernews/analyze.requested" },
   async ({ event, step }) => {
-    const { projectId, keyword, subreddit } = event.data;
+    const { projectId, feedType, storyCount, minScore, minComments } = event.data;
 
     try {
       // Update status to processing
       await updateProjectStatus(projectId, "processing");
 
-      // Step 1: Fetch Reddit data
-      const redditData = await step.run("fetch-reddit-data", async () => {
-        console.log(`Fetching Reddit data for: ${keyword} in r/${subreddit}`);
-        return await collectRedditData(subreddit, keyword);
+      // Step 1: Fetch Hacker News data
+      const hnData = await step.run("fetch-hackernews-data", async () => {
+        console.log(`Fetching Hacker News ${feedType} stories (limit: ${storyCount})`);
+        return await collectHackerNewsData({
+          feedType: feedType as 'top' | 'best' | 'new',
+          limit: storyCount,
+          minScore,
+          minComments,
+        });
       });
 
       // Step 2: Analyze comments with Gemini
       const summaries = await step.run("analyze-comments", async () => {
-        console.log(`Analyzing ${redditData.totalComments} comments`);
-        if (redditData.comments.length === 0) {
+        console.log(`Analyzing ${hnData.totalComments} comments`);
+        if (hnData.comments.length === 0) {
           return [];
         }
-        return await analyzeComments(redditData.comments);
+        return await analyzeComments(hnData.comments);
       });
 
       // Step 3: Generate insights with GPT-4o
@@ -37,7 +42,7 @@ export const analyzeRedditWorkflow = inngest.createFunction(
         if (summaries.length === 0) {
           throw new Error("No summaries available for insight generation");
         }
-        return await generateInsights(keyword, subreddit, summaries);
+        return await generateInsights(feedType, summaries);
       });
 
       // Step 4: Save results to database
@@ -46,7 +51,7 @@ export const analyzeRedditWorkflow = inngest.createFunction(
 
         const analysisResult = await saveAnalysisResult(
           projectId,
-          { posts: redditData.posts, comments: redditData.comments },
+          { posts: hnData.stories, comments: hnData.comments },
           summaries,
           insights,
           insights.markdown_content
@@ -60,7 +65,7 @@ export const analyzeRedditWorkflow = inngest.createFunction(
 
       // Send completion event
       await step.sendEvent("analysis-completed", {
-        name: "reddit/analysis.completed",
+        name: "hackernews/analysis.completed",
         data: {
           projectId,
           resultId: result.id,

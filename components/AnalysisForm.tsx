@@ -22,36 +22,76 @@ export function AnalysisForm() {
       <h2 className="text-2xl font-bold mb-4">New Analysis</h2>
       <form action={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="keyword" className="block text-sm font-medium mb-2">
-            Keyword
+          <label htmlFor="feedType" className="block text-sm font-medium mb-2">
+            Feed Type
           </label>
-          <input
-            type="text"
-            id="keyword"
-            name="keyword"
+          <select
+            id="feedType"
+            name="feedType"
             required
-            placeholder="e.g., productivity"
             className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700"
             disabled={isLoading}
-          />
+            defaultValue="top"
+          >
+            <option value="top">Top Stories</option>
+            <option value="best">Best Stories</option>
+            <option value="new">New Stories</option>
+          </select>
         </div>
 
         <div>
-          <label htmlFor="subreddit" className="block text-sm font-medium mb-2">
-            Subreddit
+          <label htmlFor="storyCount" className="block text-sm font-medium mb-2">
+            Number of Stories
           </label>
           <input
-            type="text"
-            id="subreddit"
-            name="subreddit"
+            type="number"
+            id="storyCount"
+            name="storyCount"
             required
-            placeholder="e.g., productivity"
+            min="1"
+            max="50"
+            defaultValue="10"
+            placeholder="e.g., 10"
             className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700"
             disabled={isLoading}
           />
           <p className="text-sm text-gray-500 mt-1">
-            Without the "r/" prefix
+            Max: 50 stories
           </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="minScore" className="block text-sm font-medium mb-2">
+              Min Score
+            </label>
+            <input
+              type="number"
+              id="minScore"
+              name="minScore"
+              min="0"
+              defaultValue="50"
+              placeholder="e.g., 50"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700"
+              disabled={isLoading}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="minComments" className="block text-sm font-medium mb-2">
+              Min Comments
+            </label>
+            <input
+              type="number"
+              id="minComments"
+              name="minComments"
+              min="0"
+              defaultValue="10"
+              placeholder="e.g., 10"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700"
+              disabled={isLoading}
+            />
+          </div>
         </div>
 
         <button

@@ -1,5 +1,5 @@
 -- ===================================================
--- Reddit Insight AI - Database Schema
+-- Hacker News Insight AI - Database Schema
 -- ===================================================
 -- Run this SQL in Supabase Dashboard > SQL Editor
 -- ===================================================
@@ -11,8 +11,11 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Stores analysis project information
 CREATE TABLE IF NOT EXISTS projects (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  keyword TEXT NOT NULL,
-  subreddit TEXT NOT NULL,
+  source TEXT DEFAULT 'hackernews',
+  feed_type TEXT,
+  story_count INTEGER,
+  min_score INTEGER DEFAULT 0,
+  min_comments INTEGER DEFAULT 0,
   status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'failed')),
   error_message TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -24,7 +27,7 @@ CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
 CREATE INDEX IF NOT EXISTS idx_projects_created_at ON projects(created_at DESC);
 
 -- ===== 2. Analysis Results Table =====
--- Stores Reddit data and AI analysis results
+-- Stores Hacker News data and AI analysis results
 CREATE TABLE IF NOT EXISTS analysis_results (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,

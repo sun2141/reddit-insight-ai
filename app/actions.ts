@@ -6,23 +6,27 @@ import { inngest } from "@/lib/inngest/client";
 import { createProject } from "@/services/db";
 
 export async function startAnalysis(formData: FormData) {
-  const keyword = formData.get("keyword") as string;
-  const subreddit = formData.get("subreddit") as string;
+  const feedType = formData.get("feedType") as string;
+  const storyCount = parseInt(formData.get("storyCount") as string);
+  const minScore = parseInt(formData.get("minScore") as string) || 0;
+  const minComments = parseInt(formData.get("minComments") as string) || 0;
 
-  if (!keyword || !subreddit) {
-    throw new Error("Keyword and subreddit are required");
+  if (!feedType || !storyCount) {
+    throw new Error("Feed type and story count are required");
   }
 
   // Create project in database
-  const project = await createProject(keyword, subreddit);
+  const project = await createProject(feedType, storyCount, minScore, minComments);
 
   // Trigger Inngest workflow
   await inngest.send({
-    name: "reddit/analyze.requested",
+    name: "hackernews/analyze.requested",
     data: {
       projectId: project.id,
-      keyword,
-      subreddit,
+      feedType,
+      storyCount,
+      minScore,
+      minComments,
     },
   });
 

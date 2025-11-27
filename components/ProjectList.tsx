@@ -51,9 +51,11 @@ export function ProjectList({ projects }: ProjectListProps) {
           >
             <div className="flex items-start justify-between mb-2">
               <div className="flex-1">
-                <h3 className="font-semibold text-lg">{project.keyword}</h3>
+                <h3 className="font-semibold text-lg">
+                  {project.feed_type?.toUpperCase()} Stories
+                </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  r/{project.subreddit}
+                  {project.story_count} stories · Min score: {project.min_score || 0} · Min comments: {project.min_comments || 0}
                 </p>
               </div>
               <StatusBadge status={project.status} />

@@ -12,12 +12,20 @@ const supabase = createClient(
 /**
  * Create a new project
  */
-export async function createProject(keyword: string, subreddit: string): Promise<Project> {
+export async function createProject(
+  feedType: string,
+  storyCount: number,
+  minScore: number = 0,
+  minComments: number = 0
+): Promise<Project> {
   const { data, error } = await supabase
     .from("projects")
     .insert({
-      keyword,
-      subreddit,
+      source: "hackernews",
+      feed_type: feedType,
+      story_count: storyCount,
+      min_score: minScore,
+      min_comments: minComments,
       status: "pending",
     })
     .select()
